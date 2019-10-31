@@ -1,70 +1,87 @@
-import React, { useState, useRef, useEffect } from "react";
+import React from "react";
 import SuggestionsPanel from "./SuggestionsPanel/SuggestionsPanel";
 
-const TextEditor = ({
-  name,
-  triggerList,
-  placeholder,
-  style = {
-    width: 400,
-    border: " 1px solid #9f9f9f",
-    fontSize: 14,
-    fontFamily: "sans-serif"
-  },
-  highlightColor = "#eaeaea"
-}) => {
-  const editor = useRef(); // the text area editor
-  const mirrorEditor = useRef(); // the mirror div containing all text up  to the selected trigger
-  const fauxIndicator = useRef(); // the indicator in the mirror div
+class TextEditor extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      textAreaValue: "",
+      tempText: "",
+      isVisible: false,
+      suggestions: [],
+      position: { x: 0, y: 0 },
+      activeTrigger: null,
+      autoCompleteQuery: "",
+      isAutoCompleteMode: false
+    };
+    this.clearAndHideSuggestionsPanel = this.clearAndHideSuggestionsPanel.bind(
+      this
+    );
+    this.onKeyUp = this.onKeyUp.bind(this);
+    this.getAutoCompleteSearchQuery = this.getAutoCompleteSearchQuery.bind(
+      this
+    );
+    this.addSuggestionToTextArea = this.addSuggestionToTextArea.bind(this);
 
-  //text area values and temp values
-  const [textAreaValue, setTextAreaValue] = useState("");
-  const [tempText, setTempText] = useState("");
+    this.editor = React.createRef();
+    this.mirrorEditor = React.createRef();
+    this.fauxIndicator = React.createRef();
+  }
+  static defaultProps = {
+    style: {
+      width: 400,
+      border: " 1px solid #9f9f9f",
+      fontSize: 14,
+      fontFamily: "sans-serif"
+    },
+    highlightColor: "#eaeaea"
+  };
 
-  // panel state
-  const [isVisible, setIsVisible] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
-  const [postion, setPosition] = useState({ x: 0, y: 0 });
-
-  // autoComplete
-  const [activeTrigger, setActiveTrigger] = useState(null);
-  const [autoCompleteQuery, setAutoCompleteQuery] = useState("");
-  const [isAutoCompleteMode, setIsAutoCompleteMode] = useState(false);
-
-  useEffect(() => {
-    if (autoCompleteQuery !== "" && activeTrigger) {
-      triggerList
-        .find(trigger => trigger.char === activeTrigger)
-        .service(autoCompleteQuery)
-        .then(items => {
-          setSuggestions(items);
-        });
-    }
-  }, [autoCompleteQuery, activeTrigger, triggerList]);
-
-  useEffect(() => {
-    setPosition({
-      x: fauxIndicator.current.offsetLeft,
-      y: fauxIndicator.current.offsetTop + style.fontSize
+  clearAndHideSuggestionsPanel() {
+    this.setState({
+      isVisible: false,
+      suggestions: [],
+      isAutoCompleteMode: false,
+      autoCompleteQuery: "",
+      activeTrigger: null
     });
-  }, [tempText, style.fontSize]);
+  }
 
-  const clearAndHideSuggestionsPanel = () => {
-    setIsVisible(false);
-    setSuggestions([]);
-    setIsAutoCompleteMode(false);
-    setAutoCompleteQuery("");
-    setActiveTrigger(null);
-  };
+  onKeyUp(e) {
+    const { textAreaValue, isAutoCompleteMode, activeTrigger } = this.state;
+    const { triggerList } = this.props;
+    const currentCursorIndex = e.target.selectionEnd;
+    const textUpToCursor = textAreaValue.slice(0, currentCursorIndex);
 
-  const evaluateEditorHeight = () => {
-    const field = editor.current;
-    field.style.height = "inherit";
-    var height = field.scrollHeight;
-    field.style.height = height + "px";
-  };
+    if (isAutoCompleteMode && activeTrigger) {
+      const query = this.getAutoCompleteSearchQuery(textAreaValue);
+      this.setState({ autoCompleteQuery: query });
+    }
 
-  const getAutoCompleteSearchQuery = () => {
+    if (
+      triggerList.map(trigger => trigger.char).includes(e.key) &&
+      !isAutoCompleteMode
+    ) {
+      const { service, char } = triggerList.find(
+        trigger => trigger.char === e.key
+      );
+      this.setState({ activeTrigger: char, isAutoCompleteMode: true });
+      service().then(items => {
+        this.setState({
+          suggestions: items,
+          tempText: textUpToCursor,
+          isVisible: true
+        });
+      });
+    } else {
+      if (e.key === " " || e.key === "Backspace") {
+        this.clearAndHideSuggestionsPanel();
+      }
+    }
+  }
+
+  getAutoCompleteSearchQuery() {
+    const { textAreaValue, tempText, activeTrigger } = this.state;
     const lastTriggerIndex = tempText.lastIndexOf(activeTrigger);
     const isTriggerAtEnd =
       textAreaValue.slice(lastTriggerIndex).indexOf(" ") === -1;
@@ -77,112 +94,101 @@ const TextEditor = ({
       .substring(lastTriggerIndex - 1, nextSpaceIndex + lastTriggerIndex)
       .replace(activeTrigger, "")
       .trim();
-  };
+  }
 
-  const onKeyUp = e => {
-    const currentCursorIndex = e.target.selectionEnd;
-    const textUpToCursor = textAreaValue.slice(0, currentCursorIndex);
-
-    if (isAutoCompleteMode && activeTrigger) {
-      const query = getAutoCompleteSearchQuery(textAreaValue);
-      setAutoCompleteQuery(query);
-    }
-
-    if (
-      triggerList.map(trigger => trigger.char).includes(e.key) &&
-      !isAutoCompleteMode
-    ) {
-      const { service, char } = triggerList.find(
-        trigger => trigger.char === e.key
-      );
-      setActiveTrigger(char);
-      setIsAutoCompleteMode(true);
-      service().then(items => {
-        setSuggestions(items);
-      });
-      setTempText(textUpToCursor);
-      setIsVisible(true);
-    } else {
-      if (e.key === " " || e.key === "Backspace") {
-        clearAndHideSuggestionsPanel();
-      }
-    }
-  };
-
-  const addSuggestionToTextArea = name => {
+  addSuggestionToTextArea(name) {
+    const { textAreaValue, tempText, autoCompleteQuery } = this.state;
     const cursorPosition = tempText.length - 1;
     const textBeforetrigger = textAreaValue.substring(0, cursorPosition + 1);
     const textAfterAutoCompleteQuery = textAreaValue.substring(
       cursorPosition + autoCompleteQuery.length + 1
     );
     const editedTextArea = `${textBeforetrigger}${name}${textAfterAutoCompleteQuery}`;
-    setTextAreaValue(editedTextArea);
-    clearAndHideSuggestionsPanel();
-    editor.current.focus();
-  };
+    this.setState({ textAreaValue: editedTextArea }, () => {
+      this.clearAndHideSuggestionsPanel();
+      this.editor.current.focus();
+    });
+  }
 
-  const highlightTags = () => {
-    let triggers = triggerList.map(item => item.char).join("");
-    var regex = new RegExp(`([${triggers}][\\w_-]+)`, "g");
+  evaluateEditorHeight() {
+    const field = this.editor.current;
+    field.style.height = "inherit";
+    var height = field.scrollHeight;
+    field.style.height = height + "px";
+  }
 
-    console.log(regex);
-    const matches = textAreaValue.match(regex);
-    let ne = textAreaValue;
-    if (matches) {
-      matches.forEach(match => {
-        ne = ne.replace(
-          match,
-          `<span style=" background-color: ${highlightColor} ">${match}</span>`
-        );
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.tempText !== this.state.tempText) {
+      this.setState({
+        position: {
+          x: this.fauxIndicator.current.offsetLeft,
+          y: this.fauxIndicator.current.offsetTop + 14
+        }
       });
-      return {
-        __html: ne
-      };
     }
-  };
 
-  const textEditorStyle = { ...style, lineHeight: 1.4 * style.fontSize + "px" };
+    if (
+      this.state.autoCompleteQuery !== "" &&
+      this.state.activeTrigger &&
+      prevState.autoCompleteQuery !== this.state.autoCompleteQuery
+    ) {
+      prevProps.triggerList
+        .find(trigger => trigger.char === this.state.activeTrigger)
+        .service(this.state.autoCompleteQuery)
+        .then(items => {
+          this.setState({ suggestions: items });
+        });
+    }
+  }
 
-  return (
-    <div className="c-text-editor">
-      <textarea
-        name={name}
-        className="c-text-editor__area"
-        style={textEditorStyle}
-        onChange={e => {
-          setTextAreaValue(e.target.value);
-          evaluateEditorHeight();
-        }}
-        value={textAreaValue}
-        onKeyUp={onKeyUp}
-        ref={editor}
-        placeholder={placeholder}
-      />
-      <div
-        className="c-text-editor__area__mirror highlight"
-        style={textEditorStyle}
-      >
-        <pre dangerouslySetInnerHTML={highlightTags()} />
-      </div>
-      <div
-        className="c-text-editor__area__mirror"
-        ref={mirrorEditor}
-        style={textEditorStyle}
-      >
-        <pre>
-          {tempText}
-          <span className="c-faux-indicator" ref={fauxIndicator} />
-        </pre>
-      </div>
-      {isVisible && suggestions.length > 0 ? (
-        <SuggestionsPanel
-          suggestions={suggestions}
-          position={postion}
-          onSuggestionClicked={addSuggestionToTextArea}
+  render() {
+    const {
+      textAreaValue,
+      tempText,
+      isVisible,
+      suggestions,
+      position
+    } = this.state;
+    const { name, style, placeholder } = this.props;
+    const textEditorStyle = {
+      ...style,
+      lineHeight: 1.4 * style.fontSize + "px"
+    };
+    return (
+      <div className="c-text-editor">
+        <textarea
+          name={name}
+          className="c-text-editor__area"
+          style={textEditorStyle}
+          onChange={e => {
+            this.setState({ textAreaValue: e.target.value });
+            this.evaluateEditorHeight();
+          }}
+          value={textAreaValue}
+          onKeyUp={this.onKeyUp}
+          ref={this.editor}
+          placeholder={placeholder}
         />
-      ) : null}
-    </div>
-  );
-};
+        <div
+          className="c-text-editor__area__mirror"
+          ref={this.mirrorEditor}
+          style={textEditorStyle}
+        >
+          <pre>
+            {tempText}
+            <span className="c-faux-indicator" ref={this.fauxIndicator} />
+          </pre>
+        </div>
+        {isVisible && suggestions.length > 0 ? (
+          <SuggestionsPanel
+            suggestions={suggestions}
+            position={position}
+            onSuggestionClicked={this.addSuggestionToTextArea}
+          />
+        ) : null}
+      </div>
+    );
+  }
+}
 
 export default TextEditor;
