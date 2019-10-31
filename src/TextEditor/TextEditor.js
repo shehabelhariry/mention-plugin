@@ -8,7 +8,8 @@ const TextEditor = ({
   style = {
     width: 400,
     border: " 1px solid #9f9f9f",
-    fontSize: 14
+    fontSize: 14,
+    fontFamily: "sans-serif"
   },
   highlightColor = "#eaeaea"
 }) => {
