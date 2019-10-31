@@ -1,22 +1,89 @@
-.App {
-  text-align: center;
+body {
+  padding: 20px;
 }
 
-.App-logo {
-  height: 40vmin;
+.c-text-editor {
+  position: relative;
+  display: inline-block;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+.c-text-editor__area {
+  display: inline-block;
+  vertical-align: top;
+  padding: 5px;
+  resize: none;
+  word-wrap: normal;
+  white-space: wrap;
+  height: inherit;
+  position: relative;
+  word-break: unset;
+  z-index: 2;
+  background-color: transparent;
+}
+
+.c-text-editor__area__mirror {
+  display: inline-block;
+  position: absolute;
+  padding: 5px;
+  vertical-align: top;
+  left: 0px;
+  top: 0;
+  word-wrap: normal;
+  visibility: hidden;
+}
+
+.c-text-editor__area__mirror.highlight {
+  border-color: transparent !important;
+  visibility: visible;
+  color: transparent;
+  border: 0px;
+}
+
+.c-suggestions {
+  position: absolute;
+  background: white;
+  border-radius: 4px;
+  z-index: 3;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+  max-width: 180px;
+  min-width: 100px;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+.c-suggestions li a {
+  text-decoration: none;
+  margin: 0;
+  padding: 10px;
+  width: calc(100% - 20px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  display: inline-block;
+  color: black !important;
+  outline: none;
+}
+
+.c-suggestions li:hover,
+.c-suggestions li a:focus {
+  background-color: #eaeaea;
+}
+
+pre {
+  margin: 0;
+  font-size: 14px;
+  font-family: sans-serif;
+  white-space: pre-line;
+}
+
+.c-faux-indicator {
+  display: inline-block;
+}
+
+.highlighted-tag {
+  background-color: cadetblue;
   color: white;
-}
-
-.App-link {
-  color: #09d3ac;
+  display: inline-block;
 }
