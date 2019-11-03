@@ -6,12 +6,12 @@ const TextEditor = ({
   triggerList,
   placeholder,
   style = {
-    width: 400,
+    width: 300,
     border: " 1px solid #9f9f9f",
     fontSize: 14,
     fontFamily: "sans-serif"
   },
-  highlightColor = "#eaeaea"
+  highlightColor = "#e6f3ff"
 }) => {
   const editor = useRef(); // the text area editor
   const mirrorEditor = useRef(); // the mirror div containing all text up  to the selected trigger
@@ -83,17 +83,19 @@ const TextEditor = ({
     const currentCursorIndex = e.target.selectionEnd;
     const textUpToCursor = textAreaValue.slice(0, currentCursorIndex);
 
+    const keyCode = e.target.value.charAt(e.target.selectionStart - 1);
+
     if (isAutoCompleteMode && activeTrigger) {
       const query = getAutoCompleteSearchQuery(textAreaValue);
       setAutoCompleteQuery(query);
     }
 
     if (
-      triggerList.map(trigger => trigger.char).includes(e.key) &&
+      triggerList.map(trigger => trigger.char).includes(keyCode) &&
       !isAutoCompleteMode
     ) {
       const { service, char } = triggerList.find(
-        trigger => trigger.char === e.key
+        trigger => trigger.char === keyCode
       );
       setActiveTrigger(char);
       setIsAutoCompleteMode(true);
@@ -103,7 +105,7 @@ const TextEditor = ({
       setTempText(textUpToCursor);
       setIsVisible(true);
     } else {
-      if (e.key === " " || e.key === "Backspace") {
+      if (keyCode === " " || keyCode === "Backspace") {
         clearAndHideSuggestionsPanel();
       }
     }
@@ -124,17 +126,18 @@ const TextEditor = ({
   const highlightTags = () => {
     let triggers = triggerList.map(item => item.char).join("");
     var regex = new RegExp(`([${triggers}][\\w_-]+)`, "g");
-
-    console.log(regex);
     const matches = textAreaValue.match(regex);
     let ne = textAreaValue;
+
     if (matches) {
       matches.forEach(match => {
+        console.log(match);
         ne = ne.replace(
           match,
           `<span style=" background-color: ${highlightColor} ">${match}</span>`
         );
       });
+      console.log({ ne, textAreaValue });
       return {
         __html: ne
       };
@@ -142,7 +145,6 @@ const TextEditor = ({
   };
 
   const textEditorStyle = { ...style, lineHeight: 1.4 * style.fontSize + "px" };
-
   return (
     <div className="c-text-editor">
       <textarea

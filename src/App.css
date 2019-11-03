@@ -1,5 +1,5 @@
 body {
-  padding: 20px;
+  /* padding: 20px; */
 }
 
 .c-text-editor {
@@ -64,6 +64,9 @@ body {
   display: inline-block;
   color: black !important;
   outline: none;
+  display: flex;
+  /* justify-content: space-between; */
+  align-items: center;
 }
 
 .c-suggestions li:hover,
@@ -86,4 +89,15 @@ pre {
   background-color: cadetblue;
   color: white;
   display: inline-block;
+}
+
+.c-suggestions__img {
+  background-size: cover;
+  background-position: center;
+  box-sizing: border-box;
+  height: 20px;
+  width: 20px;
+  display: inline-block;
+  border-radius: 100%;
+  margin-right: 10px;
 }
