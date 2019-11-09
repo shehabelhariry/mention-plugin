@@ -11,7 +11,8 @@ const TextEditor = ({
     fontSize: 14,
     fontFamily: "sans-serif"
   },
-  highlightColor = "#e6f3ff"
+  highlightColor = "#e6f3ff",
+  onTextEditorChange
 }) => {
   const editor = useRef(); // the text area editor
   const mirrorEditor = useRef(); // the mirror div containing all text up  to the selected trigger
@@ -82,7 +83,6 @@ const TextEditor = ({
   const onKeyUp = e => {
     const currentCursorIndex = e.target.selectionEnd;
     const textUpToCursor = textAreaValue.slice(0, currentCursorIndex);
-
     const keyCode = e.target.value.charAt(e.target.selectionStart - 1);
 
     if (isAutoCompleteMode && activeTrigger) {
@@ -125,19 +125,17 @@ const TextEditor = ({
 
   const highlightTags = () => {
     let triggers = triggerList.map(item => item.char).join("");
-    var regex = new RegExp(`([${triggers}][\\w_-]+)`, "g");
+    var regex = new RegExp(`([${triggers}][\\wء-ي_-]+)`, "g");
     const matches = textAreaValue.match(regex);
     let ne = textAreaValue;
 
     if (matches) {
       matches.forEach(match => {
-        console.log(match);
         ne = ne.replace(
           match,
           `<span style=" background-color: ${highlightColor} ">${match}</span>`
         );
       });
-      console.log({ ne, textAreaValue });
       return {
         __html: ne
       };
@@ -154,6 +152,9 @@ const TextEditor = ({
         onChange={e => {
           setTextAreaValue(e.target.value);
           evaluateEditorHeight();
+          if (onTextEditorChange) {
+            onTextEditorChange(e.target.value);
+          }
         }}
         value={textAreaValue}
         onKeyUp={onKeyUp}

@@ -27,7 +27,7 @@ body {
   padding: 5px;
   vertical-align: top;
   left: 0px;
-  top: 0;
+  top: 0px;
   word-wrap: normal;
   visibility: hidden;
 }
@@ -78,7 +78,7 @@ pre {
   margin: 0;
   font-size: 14px;
   font-family: sans-serif;
-  white-space: pre-line;
+  white-space: pre-wrap;
 }
 
 .c-faux-indicator {
